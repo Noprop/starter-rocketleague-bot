@@ -70,6 +70,12 @@ class Vec3:
 
     def __repr__(self):
         return self.__str__()
+    
+    def __eq__(self, other: 'Vec3'):
+        return (self.x == other.x and self.y == other.y and self.z == other.z)
+    
+    def __ne__(self, other: 'Vec3'):
+        return not self.__eq__(other)
 
     def flat(self):
         """Returns a new Vec3 that equals this Vec3 but projected onto the ground plane. I.e. where z=0."""

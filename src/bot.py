@@ -57,20 +57,44 @@ class MyBot(BaseAgent):
         my_car = packet.game_cars[self.index]
         car_location = Vec3(my_car.physics.location)
         car_velocity = Vec3(my_car.physics.velocity)
-        
-        # print(ball_location)
 
         # By default we will chase the ball, but target_location can be changed later
         # target_location = ball_location
         target_location = Vec3(0, 4240, 0)
+
         if self.team == 0:
-            target_location = Vec3(0, -4240, 0)
+            if ball_location[1] < 0:
+                target_location = ball_location
+            else:
+                target_location = Vec3(0, -4240, 0)
+
+        if self.team == 1:
+            if ball_location[1] > 0:
+                target_location = ball_location
+            else: 
+                target_location = Vec3(0, 4240, 0)
+
+        # this means kickoff should be true
+        if ball_location.flat() == Vec3(0, 0, 0):
+            target_location = Vec3(0,0,0)
+
+        
 
         if car_location.dist(ball_location) > 1500:
             # We're far away from the ball, let's try to lead it a little bit
             ball_prediction = self.get_ball_prediction_struct()  # This can predict bounces, etc
-            ball_in_future = find_slice_at_time(
-                ball_prediction, packet.game_info.seconds_elapsed + 2)
+            ball_in_future = find_slice_at_time(ball_prediction, packet.game_info.seconds_elapsed + 2)
+            # print(Vec3(ball_prediction))
+            # print(ball_in_future)
+
+            
+            # gets ball predictions every 4 slices starting from the 5th slice
+            render_ball_predictions = [ball_location]
+            for i in range(5, 360, 4):
+                render_ball_predictions.append(ball_prediction.slices[i].physics.location)
+            # renders the ball predictions
+            self.renderer.draw_polyline_3d(render_ball_predictions, self.renderer.blue())
+
 
             # ball_in_future might be None if we don't have an adequate ball prediction right now, like during
             # replays, so check it to avoid errors.
@@ -97,7 +121,7 @@ class MyBot(BaseAgent):
 
         controls = SimpleControllerState()
         controls.steer = steer_toward_target(my_car, target_location)
-        controls.throttle = 0.2
+        controls.throttle = 1
         # You can set more controls if you want, like controls.boost.
 
         return controls
@@ -122,3 +146,6 @@ class MyBot(BaseAgent):
 
         # Return the controls associated with the beginning of the sequence so we can start right away.
         return self.active_sequence.tick(packet)
+    
+    def do_kickoff(self, packet):
+        pass
